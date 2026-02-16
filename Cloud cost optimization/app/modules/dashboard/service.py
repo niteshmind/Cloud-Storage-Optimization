@@ -289,7 +289,7 @@ class DashboardService:
                 'id': j.id,
                 'status': j.status,
                 'file_name': j.file_name,
-                'records_processed': j.metadata.get('records_extracted', 0) if j.metadata else 0,
+                'records_processed': j.job_metadata.get('records_extracted', 0) if j.job_metadata else 0,
             }
             for j in recent
         ]

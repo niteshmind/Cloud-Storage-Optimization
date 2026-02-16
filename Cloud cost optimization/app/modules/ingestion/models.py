@@ -80,7 +80,7 @@ class IngestionJob(Base):
     mime_type: Mapped[str] = mapped_column(String(100), nullable=False)
     checksum: Mapped[str | None] = mapped_column(String(64), nullable=True)  # SHA-256
     # Processing metadata
-    metadata: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    job_metadata: Mapped[dict] = mapped_column(JSON, name="metadata", nullable=False, default=dict)
     # {rows_processed, columns, detected_format, errors}
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

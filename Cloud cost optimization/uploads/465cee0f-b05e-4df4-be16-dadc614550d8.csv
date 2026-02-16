@@ -1,0 +1,11 @@
+date,provider,resource_type,resource_id,cost,tags
+2025-02-01,aws,ec2,i-1234567890abcdef0,45.67,"env:prod,app:web"
+2025-02-01,aws,ec2,i-0987654321fedcba0,32.10,"env:prod,app:api"
+2025-02-01,aws,s3,my-bucket-prod-001,12.34,"env:prod,app:storage"
+2025-02-01,aws,rds,db-prod-main,89.50,"env:prod,app:database"
+2025-02-01,gcp,compute,instance-web-001,56.78,"env:prod,app:web"
+2025-02-01,gcp,storage,bucket-data-001,23.45,"env:prod,app:storage"
+2025-02-01,azure,vm,vm-app-prod-01,67.89,"env:prod,app:api"
+2025-02-02,aws,ec2,i-1111111111111111,45.67,"env:prod,app:web"
+2025-02-02,aws,s3,my-bucket-prod-002,15.45,"env:prod,app:storage"
+2025-02-02,gcp,compute,instance-api-001,48.90,"env:prod,app:api"

@@ -49,6 +49,18 @@ def create_application() -> FastAPI:
         allow_headers=["*"],
     )
     
+    # Root endpoint
+    @app.get("/", tags=["info"])
+    async def root():
+        return {
+            "name": settings.APP_NAME,
+            "version": settings.APP_VERSION,
+            "environment": settings.APP_ENVIRONMENT,
+            "docs_url": "/docs" if settings.DEBUG else None,
+            "redoc_url": "/redoc" if settings.DEBUG else None,
+            "health_check_url": "/health",
+        }
+    
     # Health check endpoint (no auth required)
     @app.get("/health", tags=["health"])
     async def health_check():

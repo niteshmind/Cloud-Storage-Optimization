@@ -109,7 +109,7 @@ class IngestionJobRepository:
         if job:
             job.status = status
             if metadata:
-                job.metadata.update(metadata)
+                job.job_metadata.update(metadata)
             if error_message:
                 job.error_message = error_message
             if status == "processing":

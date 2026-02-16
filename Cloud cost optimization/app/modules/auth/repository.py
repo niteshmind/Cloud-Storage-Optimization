@@ -1,5 +1,6 @@
 """Database access layer for user and API key operations."""
 
+from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -24,6 +25,8 @@ class UserRepository:
     
     async def create(self, user: User) -> User:
         """Create a new user."""
+        user.created_at = datetime.now(timezone.utc)
+        user.updated_at = datetime.now(timezone.utc)
         self.db.add(user)
         await self.db.flush()
         await self.db.refresh(user)

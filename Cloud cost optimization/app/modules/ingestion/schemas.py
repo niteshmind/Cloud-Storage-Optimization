@@ -36,7 +36,7 @@ class DataSourceResponse(DataSourceBase):
 # Ingestion Job schemas
 class IngestionJobResponse(BaseModel):
     """Response with ingestion job details."""
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
     
     id: int
     data_source_id: int | None
@@ -45,7 +45,7 @@ class IngestionJobResponse(BaseModel):
     file_size: int
     mime_type: str
     checksum: str | None
-    metadata: dict
+    metadata: dict = Field(..., alias="job_metadata")
     started_at: datetime | None
     completed_at: datetime | None
     error_message: str | None
