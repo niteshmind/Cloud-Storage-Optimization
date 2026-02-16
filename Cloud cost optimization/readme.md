@@ -116,8 +116,8 @@ curl -X POST http://localhost:8000/api/v1/auth/register \
 
 # Get token
 curl -X POST http://localhost:8000/api/v1/auth/login \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "username=user@example.com&password=securepassword123"
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com","password":"securepassword123"}'
 
 # Upload data (with token)
 curl -X POST http://localhost:8000/api/v1/ingestion/upload \

@@ -58,6 +58,13 @@ class APIKeyRepository:
             select(APIKey).where(APIKey.key_hash == key_hash, APIKey.is_active == True)
         )
         return result.scalar_one_or_none()
+
+    async def list_active(self) -> list[APIKey]:
+        """List all active API keys."""
+        result = await self.db.execute(
+            select(APIKey).where(APIKey.is_active.is_(True))
+        )
+        return list(result.scalars().all())
     
     async def list_by_user(self, user_id: int) -> list[APIKey]:
         """List all API keys for a user."""

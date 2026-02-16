@@ -1,7 +1,5 @@
 """Business logic for authentication and user management."""
 
-from datetime import datetime, timezone
-
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import (
@@ -18,6 +16,7 @@ from app.core.security import (
     hash_password,
     verify_password,
 )
+from app.core.config import settings
 from app.modules.auth.models import APIKey, User
 from app.modules.auth.repository import APIKeyRepository, UserRepository
 from app.modules.auth.schemas import (
@@ -136,21 +135,25 @@ class AuthService:
     
     async def validate_api_key(self, plain_key: str) -> APIKey | None:
         """Validate an API key and update last used timestamp."""
-        # Hash lookup would require iterating - instead we'll do prefix matching
-        # For production: consider a more efficient lookup strategy
-        key_hash = hash_password(plain_key)
-        api_key = await self.api_key_repo.get_by_hash(key_hash)
-        
-        if not api_key:
+        if not plain_key.startswith(settings.API_KEY_PREFIX):
             return None
-        
-        if not api_key.is_active:
-            return None
-        
-        if api_key.is_expired:
-            return None
-        
-        # Update last used
-        await self.api_key_repo.update_last_used(api_key)
-        
-        return api_key
+
+        # API keys are bcrypt-hashed (salted), so deterministic DB lookup is not possible.
+        # Validate by checking each active hash with passlib's verify.
+        active_keys = await self.api_key_repo.list_active()
+
+        for api_key in active_keys:
+            try:
+                if not verify_password(plain_key, api_key.key_hash):
+                    continue
+            except ValueError:
+                # Skip malformed hashes instead of failing authentication globally.
+                continue
+
+            if api_key.is_expired:
+                return None
+
+            await self.api_key_repo.update_last_used(api_key)
+            return api_key
+
+        return None

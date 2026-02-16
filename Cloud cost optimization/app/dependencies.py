@@ -5,35 +5,40 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.exceptions import AuthenticationError
 from app.core.redis import get_redis
 from app.core.security import decode_token
-from app.core.exceptions import AuthenticationError, AuthorizationError
+from app.modules.auth.service import AuthService
 
 security = HTTPBearer(auto_error=False)
 
 
+def _decode_access_token(token: str) -> dict:
+    """Decode an access token and return basic user claims."""
+    payload = decode_token(token)
+    if payload.get("type") != "access":
+        raise AuthenticationError("Invalid token type")
+
+    user_id = payload.get("sub")
+    if not user_id:
+        raise AuthenticationError("Invalid token payload")
+
+    return {"id": user_id, "email": payload.get("email"), "auth_type": "jwt"}
+
+
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
-    db: AsyncSession = Depends(get_db),
 ) -> dict:
-    """Validate JWT token and return current user data."""
+    """Validate JWT token and return current user data (JWT required)."""
     if not credentials:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication required",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     try:
-        payload = decode_token(credentials.credentials)
-        if payload.get("type") != "access":
-            raise AuthenticationError("Invalid token type")
-        
-        user_id = payload.get("sub")
-        if not user_id:
-            raise AuthenticationError("Invalid token payload")
-        
-        return {"id": user_id, "email": payload.get("email")}
+        return _decode_access_token(credentials.credentials)
     except AuthenticationError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -50,19 +55,42 @@ async def get_current_active_user(
     return current_user
 
 
-async def get_api_key_user(request: Request, db: AsyncSession = Depends(get_db)) -> dict | None:
+async def get_jwt_user_optional(
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
+) -> dict | None:
+    """Return JWT user if present and valid, otherwise None."""
+    if not credentials:
+        return None
+
+    try:
+        return _decode_access_token(credentials.credentials)
+    except AuthenticationError:
+        return None
+
+
+async def get_api_key_user(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> dict | None:
     """Validate API key from request header and return user data."""
     api_key = request.headers.get("X-API-Key")
     if not api_key:
         return None
-    
-    # TODO: Validate API key against database
-    # For now, return None to allow fallback to JWT
-    return None
+
+    service = AuthService(db)
+    key_record = await service.validate_api_key(api_key)
+    if not key_record:
+        return None
+
+    user = await service.user_repo.get_by_id(key_record.user_id)
+    if not user or not user.is_active:
+        return None
+
+    return {"id": str(user.id), "email": user.email, "auth_type": "api_key"}
 
 
 async def get_current_user_or_api_key(
-    jwt_user: dict | None = Depends(get_current_user),
+    jwt_user: dict | None = Depends(get_jwt_user_optional),
     api_key_user: dict | None = Depends(get_api_key_user),
 ) -> dict:
     """Authenticate via JWT or API key."""
@@ -78,4 +106,4 @@ async def get_current_user_or_api_key(
 # Common dependencies
 DBDependency = Depends(get_db)
 RedisDependency = Depends(get_redis)
-CurrentUserDependency = Depends(get_current_active_user)
+CurrentUserDependency = Depends(get_current_user_or_api_key)

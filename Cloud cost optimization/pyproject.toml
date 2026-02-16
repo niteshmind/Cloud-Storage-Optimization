@@ -3,7 +3,7 @@ name = "costintel-pipeline"
 version = "0.1.0"
 description = "Scalable backend service for cloud cost optimization, classification, and decision-making"
 authors = ["CostIntel Team <team@costintel.io>"]
-readme = "README.md"
+readme = "readme.md"
 license = "MIT"
 packages = [{include = "app"}]
 
@@ -15,6 +15,7 @@ fastapi = "^0.115.0"
 uvicorn = {extras = ["standard"], version = "^0.34.0"}
 pydantic = "^2.10.0"
 pydantic-settings = "^2.7.0"
+email-validator = "^2.3.0"
 
 # Database
 sqlalchemy = {extras = ["asyncio"], version = "^2.0.36"}
@@ -29,6 +30,7 @@ celery = "^5.4.0"
 pyjwt = "^2.10.0"
 python-jose = {extras = ["cryptography"], version = "^3.3.0"}
 passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+bcrypt = "<5"
 python-multipart = "^0.0.20"
 
 # Rate Limiting
@@ -50,6 +52,7 @@ httpx = "^0.28.0"
 python-dotenv = "^1.0.0"
 aiofiles = "^24.1.0"
 python-magic = "^0.4.27"
+python-magic-bin = {version = "^0.4.14", markers = "platform_system == 'Windows'"}
 croniter = "^6.0.0"
 tenacity = "^9.0.0"
 

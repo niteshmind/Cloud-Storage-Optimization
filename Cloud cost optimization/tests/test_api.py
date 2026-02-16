@@ -1,7 +1,8 @@
 """Example API usage and integration tests."""
 
 import pytest
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
+from uuid import uuid4
 
 from app.main import app
 
@@ -9,7 +10,8 @@ from app.main import app
 @pytest.mark.asyncio
 async def test_health_endpoint():
     """Test health check endpoint."""
-    async with AsyncClient(app=app, base_url="http://test") as client:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
         response = await client.get("/health")
         assert response.status_code == 200
         data = response.json()
@@ -20,10 +22,13 @@ async def test_health_endpoint():
 @pytest.mark.asyncio
 async def test_auth_flow():
     """Test authentication flow."""
-    async with AsyncClient(app=app, base_url="http://test") as client:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        email = f"test-{uuid4().hex[:8]}@example.com"
+
         # Register
         register_data = {
-            "email": "test@example.com",
+            "email": email,
             "password": "SecurePassword123!",
             "full_name": "Test User",
         }
@@ -32,10 +37,10 @@ async def test_auth_flow():
         
         # Login
         login_data = {
-            "email": "test@example.com",
+            "email": email,
             "password": "SecurePassword123!",
         }
-        response = await client.post("/api/v1/auth/login", data=login_data)
+        response = await client.post("/api/v1/auth/login", json=login_data)
         assert response.status_code == 200
         token_data = response.json()
         assert "access_token" in token_data
@@ -50,7 +55,8 @@ async def test_auth_flow():
 @pytest.mark.asyncio
 async def test_ingestion_endpoints():
     """Test ingestion endpoints require authentication."""
-    async with AsyncClient(app=app, base_url="http://test") as client:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
         # Without auth - should fail
         response = await client.get("/api/v1/ingestion/jobs")
         assert response.status_code == 401
@@ -76,8 +82,8 @@ curl -X POST http://localhost:8000/api/v1/auth/register \
 
 # 3. Login (get token)
 curl -X POST http://localhost:8000/api/v1/auth/login \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "username=user@example.com&password=SecurePassword123!"
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com","password":"SecurePassword123!"}'
 
 # 4. Upload File (requires token)
 curl -X POST http://localhost:8000/api/v1/ingestion/upload \
